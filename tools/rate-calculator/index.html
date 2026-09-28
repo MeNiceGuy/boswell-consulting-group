@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Private-Pay Rate Calculator - Boswell Consulting Group</title>
+  <meta name="description" content="Free calculator to work out a sustainable hourly rate for your private-pay home care agency.">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">Boswell Consulting Group<small>Practical tools for home care operators</small></a>
+    <nav class="site-nav">
+      <a href="https://drboswell.gumroad.com">Toolkits</a>
+      <a href="../../index.html">Free tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Private-Pay Rate Calculator</h1>
+    <p class="lead">Enter your costs and targets below. The calculator works out the hourly rate you need to cover costs and hit your profit goal, and it shows every step so you can check the math.</p>
+  </div>
+
+  <div class="card">
+    <form id="rate-form" novalidate>
+      <div class="field">
+        <label for="hourlyCost">1. Average caregiver hourly cost, fully loaded</label>
+        <input type="number" id="hourlyCost" name="hourlyCost" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 18">
+        <div class="hint">Wages plus payroll taxes plus insurance, in dollars per hour.</div>
+      </div>
+
+      <div class="field">
+        <label for="hoursPerWeek">2. Target billable hours per week</label>
+        <input type="number" id="hoursPerWeek" name="hoursPerWeek" min="0" step="0.5" inputmode="decimal" placeholder="e.g. 30">
+        <div class="hint">Hours you plan to actually bill each week.</div>
+      </div>
+
+      <div class="field">
+        <label for="overhead">3. Monthly overhead</label>
+        <input type="number" id="overhead" name="overhead" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 2500">
+        <div class="hint">Rent, software, insurance, admin. Everything not tied to one hour of care, in dollars per month.</div>
+      </div>
+
+      <div class="field">
+        <label for="marginPct">4. Desired profit margin</label>
+        <input type="number" id="marginPct" name="marginPct" min="0" max="89.99" step="0.5" inputmode="decimal" placeholder="e.g. 20">
+        <div class="hint">As a percent of revenue. Must be at least 0 and below 90.</div>
+      </div>
+
+      <div class="field">
+        <label for="marketRate">5. Local market rate (optional)</label>
+        <input type="number" id="marketRate" name="marketRate" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 55">
+        <div class="hint">What agencies near you charge per hour. Used only for comparison.</div>
+      </div>
+
+      <div id="form-errors" aria-live="polite" style="color: #a33; margin-bottom: 1rem;"></div>
+
+      <button type="submit" class="btn">Calculate my rate</button>
+    </form>
+  </div>
+
+  <div id="results" class="result-box" style="display: none;" aria-live="polite">
+    <h2>Your numbers</h2>
+
+    <div class="result-line">
+      <span class="k">Minimum sustainable hourly rate</span>
+      <span class="v" id="out-min-rate"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Recommended rate</span>
+      <span class="v big-number" id="out-recommended"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Gross margin at recommended rate</span>
+      <span class="v" id="out-margin"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Projected monthly revenue at target hours</span>
+      <span class="v" id="out-monthly-rev"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Projected annual revenue at target hours</span>
+      <span class="v" id="out-annual-rev"></span>
+    </div>
+    <div class="result-line" id="market-row" style="display: none;">
+      <span class="k">Market comparison</span>
+      <span class="v" id="out-market" style="font-weight: 400; max-width: 60%;"></span>
+    </div>
+
+    <h3>How the math works</h3>
+    <div class="formula" id="formula-steps"></div>
+
+    <p class="disclaimer">This calculator is a working model based on professional judgment, not financial advice. Verify the numbers against your own books before setting rates.</p>
+
+    <p style="margin-top: 1.5rem;">
+      <a class="btn" href="https://drboswell.gumroad.com">See the toolkits</a>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Boswell Consulting Group</p>
+    <p class="fine">Free tools. No account needed. Nothing you enter leaves your browser.</p>
+  </div>
+</footer>
+
+<script src="calculator.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("rate-form");
+  var errBox = document.getElementById("form-errors");
+  var results = document.getElementById("results");
+
+  function val(id) {
+    return document.getElementById(id).value;
+  }
+
+  function line(left, right) {
+    return left + "\n" + right + "\n";
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    errBox.innerHTML = "";
+
+    var values = {
+      hourlyCost: val("hourlyCost"),
+      hoursPerWeek: val("hoursPerWeek"),
+      overhead: val("overhead"),
+      marginPct: val("marginPct"),
+      marketRate: val("marketRate")
+    };
+
+    var errors = validateInputs(values);
+    if (errors.length > 0) {
+      errBox.innerHTML = errors.map(function (m) {
+        return "<p>" + m + "</p>";
+      }).join("");
+      results.style.display = "none";
+      return;
+    }
+
+    var inputs = {
+      hourlyCost: Number(values.hourlyCost),
+      hoursPerWeek: Number(values.hoursPerWeek),
+      overhead: Number(values.overhead),
+      marginPct: Number(values.marginPct)
+    };
+    var r = calculateRate(inputs);
+
+    document.getElementById("out-min-rate").textContent = fmtMoney(r.minRate);
+    document.getElementById("out-recommended").textContent = "$" + r.recommended;
+    document.getElementById("out-margin").textContent = r.grossMarginPct.toFixed(1) + "%";
+    document.getElementById("out-monthly-rev").textContent = fmtMoney(r.monthlyRevenue);
+    document.getElementById("out-annual-rev").textContent = fmtMoney(r.annualRevenue);
+
+    var marketRow = document.getElementById("market-row");
+    if (String(values.marketRate).trim() !== "") {
+      document.getElementById("out-market").textContent =
+        marketComparison(r.recommended, Number(values.marketRate));
+      marketRow.style.display = "";
+    } else {
+      marketRow.style.display = "none";
+    }
+
+    var steps = "";
+    steps += line("Monthly billable hours = " + fmtHours(inputs.hoursPerWeek) + " hrs/week x 52 weeks / 12 = " + fmtHours(r.monthlyBillableHours), "Monthly billable hours: " + fmtHours(r.monthlyBillableHours) + " hrs");
+    steps += line("Monthly labor cost = " + fmtMoney(inputs.hourlyCost) + " x " + fmtHours(r.monthlyBillableHours) + " hrs = " + fmtMoney(r.monthlyLaborCost), "Monthly labor cost: " + fmtMoney(r.monthlyLaborCost));
+    steps += line("Total monthly cost = " + fmtMoney(r.monthlyLaborCost) + " + " + fmtMoney(inputs.overhead) + " overhead = " + fmtMoney(r.totalMonthlyCost), "Total monthly cost: " + fmtMoney(r.totalMonthlyCost));
+    steps += line("Cost per hour = " + fmtMoney(r.totalMonthlyCost) + " / " + fmtHours(r.monthlyBillableHours) + " hrs = " + fmtMoney(r.costPerHour), "Cost per hour: " + fmtMoney(r.costPerHour));
+    steps += line("Minimum rate = " + fmtMoney(r.costPerHour) + " / (1 - " + inputs.marginPct + "% margin) = " + fmtMoney(r.minRate), "Minimum sustainable rate: " + fmtMoney(r.minRate));
+    steps += line("Recommended rate = round up " + fmtMoney(r.minRate) + " to the nearest whole dollar = $" + r.recommended, "Recommended rate: $" + r.recommended);
+    document.getElementById("formula-steps").textContent = steps;
+
+    results.style.display = "";
+    results.scrollIntoView();
+  });
+})();
+</script>
+
+</body>
+</html>
