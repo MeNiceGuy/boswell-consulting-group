@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Break-Even Calculator - Boswell Consulting Group</title>
+  <meta name="description" content="Free calculator to find how many clients your home care agency needs each month to cover its costs.">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">Boswell Consulting Group<small>Practical tools for home care operators</small></a>
+    <nav class="site-nav">
+      <a href="https://drboswell.gumroad.com">Toolkits</a>
+      <a href="../../index.html">Free tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Break-Even Calculator</h1>
+    <p class="lead">Enter three numbers below. The calculator tells you how many clients you need each month to cover your costs, and it shows every step so you can check the math.</p>
+  </div>
+
+  <div class="card">
+    <form id="breakeven-form" novalidate>
+      <div class="field">
+        <label for="fixedCosts">1. Monthly fixed costs</label>
+        <input type="number" id="fixedCosts" name="fixedCosts" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 4800">
+        <div class="hint">Rent, insurance, software, salaried staff. Costs that stay the same each month, in dollars.</div>
+      </div>
+
+      <div class="field">
+        <label for="revenuePerClient">2. Average revenue per client per month</label>
+        <input type="number" id="revenuePerClient" name="revenuePerClient" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 5200">
+        <div class="hint">What one average client brings in each month, in dollars.</div>
+      </div>
+
+      <div class="field">
+        <label for="variablePerClient">3. Average variable cost per client per month</label>
+        <input type="number" id="variablePerClient" name="variablePerClient" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 3900">
+        <div class="hint">Caregiver wages, supplies, travel tied to one client. Costs that grow with each new client, in dollars.</div>
+      </div>
+
+      <div id="form-errors" aria-live="polite" style="color: #a33; margin-bottom: 1rem;"></div>
+
+      <button type="submit" class="btn">Find my break-even point</button>
+    </form>
+  </div>
+
+  <div id="results" class="result-box" style="display: none;" aria-live="polite">
+    <h2>Your numbers</h2>
+
+    <div class="result-line">
+      <span class="k">Contribution margin per client</span>
+      <span class="v" id="out-margin"></span>
+    </div>
+    <div class="result-line" id="clients-row">
+      <span class="k">Clients needed to break even</span>
+      <span class="v big-number" id="out-clients"></span>
+    </div>
+    <div class="result-line" id="monthly-row">
+      <span class="k">Monthly revenue at break-even</span>
+      <span class="v" id="out-monthly-rev"></span>
+    </div>
+    <div class="result-line" id="annual-row">
+      <span class="k">Annual revenue at break-even</span>
+      <span class="v" id="out-annual-rev"></span>
+    </div>
+    <div id="impossible-box" style="display: none; padding: 1rem; margin: 1rem 0; border: 2px solid #a33; border-radius: 6px;">
+      <p style="margin: 0; font-weight: 600;">Break-even is not possible with these numbers.</p>
+      <p style="margin: 0.5rem 0 0;" id="out-impossible"></p>
+    </div>
+
+    <h3>How the math works</h3>
+    <div class="formula" id="formula-steps"></div>
+
+    <p class="disclaimer">This calculator is a planning model based on professional judgment, not financial advice. Verify the numbers against your own books before making business decisions.</p>
+
+    <p style="margin-top: 1.5rem;">
+      <a class="btn" href="https://drboswell.gumroad.com">See the toolkits</a>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Boswell Consulting Group</p>
+    <p class="fine">Free tools. No account needed. Nothing you enter leaves your browser.</p>
+  </div>
+</footer>
+
+<script src="calculator.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("breakeven-form");
+  var errBox = document.getElementById("form-errors");
+  var results = document.getElementById("results");
+
+  function val(id) {
+    return document.getElementById(id).value;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    errBox.innerHTML = "";
+
+    var values = {
+      fixedCosts: val("fixedCosts"),
+      revenuePerClient: val("revenuePerClient"),
+      variablePerClient: val("variablePerClient")
+    };
+
+    var errors = validateInputs(values);
+    if (errors.length > 0) {
+      errBox.innerHTML = errors.map(function (m) {
+        return "<p>" + m + "</p>";
+      }).join("");
+      results.style.display = "none";
+      return;
+    }
+
+    var inputs = {
+      fixedCosts: Number(values.fixedCosts),
+      revenuePerClient: Number(values.revenuePerClient),
+      variablePerClient: Number(values.variablePerClient)
+    };
+    var r = calculateBreakEven(inputs);
+
+    document.getElementById("out-margin").textContent = fmtMoney(r.marginPerClient);
+
+    var steps = "";
+    steps += "Contribution margin per client = " + fmtMoney(inputs.revenuePerClient) + " revenue - " + fmtMoney(inputs.variablePerClient) + " variable cost = " + fmtMoney(r.marginPerClient) + "\n";
+
+    if (!r.possible) {
+      document.getElementById("clients-row").style.display = "none";
+      document.getElementById("monthly-row").style.display = "none";
+      document.getElementById("annual-row").style.display = "none";
+      document.getElementById("impossible-box").style.display = "";
+      document.getElementById("out-impossible").textContent =
+        "Your variable cost per client meets or exceeds your revenue per client, so each new client loses money instead of covering your fixed costs. Break-even is impossible until you raise your prices or lower your per-client costs.";
+    } else {
+      document.getElementById("clients-row").style.display = "";
+      document.getElementById("monthly-row").style.display = "";
+      document.getElementById("annual-row").style.display = "";
+      document.getElementById("impossible-box").style.display = "none";
+
+      document.getElementById("out-clients").textContent = fmtInt(r.clients);
+      document.getElementById("out-monthly-rev").textContent = fmtMoney(r.monthlyRevenue);
+      document.getElementById("out-annual-rev").textContent = fmtMoney(r.annualRevenue);
+
+      steps += "Clients to break even = " + fmtMoney(inputs.fixedCosts) + " fixed costs / " + fmtMoney(r.marginPerClient) + " margin per client = " + (inputs.fixedCosts / r.marginPerClient).toFixed(2) + ", rounded up to " + fmtInt(r.clients) + " clients\n";
+      steps += "Monthly revenue at break-even = " + fmtInt(r.clients) + " clients x " + fmtMoney(inputs.revenuePerClient) + " = " + fmtMoney(r.monthlyRevenue) + "\n";
+      steps += "Annual revenue at break-even = " + fmtMoney(r.monthlyRevenue) + " x 12 months = " + fmtMoney(r.annualRevenue) + "\n";
+    }
+
+    document.getElementById("formula-steps").textContent = steps;
+
+    results.style.display = "";
+    results.scrollIntoView();
+  });
+})();
+</script>
+
+</body>
+</html>
