@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Startup Cost Estimator - Boswell Consulting Group</title>
+  <meta name="description" content="Free estimator for planning the startup costs of a home care agency or Medicare-certified home health agency. Illustrative ranges only.">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">Boswell Consulting Group<small>Practical tools for home care operators</small></a>
+    <nav class="site-nav">
+      <a href="https://drboswell.gumroad.com">Toolkits</a>
+      <a href="../../index.html">Free tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Startup Cost Estimator</h1>
+    <p class="lead">Answer four questions and get an itemized low to high estimate of what it costs to start your agency. Every line is an illustrative planning range based on professional judgment, not a quote, and the math is shown so you can check it.</p>
+  </div>
+
+  <div class="card">
+    <form id="startup-form" novalidate>
+      <div class="field">
+        <label for="state">1. Your state</label>
+        <select id="state" name="state">
+          <option value="">Select a state</option>
+        </select>
+        <div class="hint">Licensing rules and fees are set state by state.</div>
+      </div>
+
+      <div class="field">
+        <label>2. Business model</label>
+        <label style="font-weight: 400;"><input type="radio" name="model" value="nonmedical" style="width: auto; margin-right: 0.5rem;">Non-medical home care (personal care, companionship)</label>
+        <label style="font-weight: 400;"><input type="radio" name="model" value="medicare" style="width: auto; margin-right: 0.5rem;">Medicare-certified home health (skilled services)</label>
+        <div class="hint">Medicare-certified agencies face a certification process that adds cost.</div>
+      </div>
+
+      <div class="field">
+        <label>3. Location</label>
+        <label style="font-weight: 400;"><input type="radio" name="location" value="home" style="width: auto; margin-right: 0.5rem;">Home-based (run it from your house)</label>
+        <label style="font-weight: 400;"><input type="radio" name="location" value="leased" style="width: auto; margin-right: 0.5rem;">Leased office (rent a space)</label>
+        <div class="hint">Home-based keeps office setup costs near zero.</div>
+      </div>
+
+      <div class="field">
+        <label for="staffCount">4. Planned initial staff count</label>
+        <input type="number" id="staffCount" name="staffCount" min="0" max="100" step="1" inputmode="numeric" placeholder="e.g. 4">
+        <div class="hint">Caregivers, nurses, and office staff you plan to have on day one. Whole number, 0 to 100.</div>
+      </div>
+
+      <div id="form-errors" aria-live="polite" style="color: #a33; margin-bottom: 1rem;"></div>
+
+      <button type="submit" class="btn">Estimate my startup costs</button>
+    </form>
+  </div>
+
+  <div id="results" class="result-box" style="display: none;" aria-live="polite">
+    <h2>Your estimate</h2>
+    <p id="state-note" style="color: var(--muted);"></p>
+
+    <div id="line-items"></div>
+
+    <div class="result-line">
+      <span class="k"><strong>Estimated total startup cost</strong></span>
+      <span class="v big-number" id="out-total"></span>
+    </div>
+
+    <h3>How the math works</h3>
+    <div class="formula" id="formula-steps"></div>
+
+    <p class="disclaimer">This estimator is a planning model based on professional judgment, not a quote and not financial advice. Ranges are illustrative only. Verify every figure against your own state licensing office and your own books before you spend anything.</p>
+
+    <p style="margin-top: 1.5rem;">
+      <a class="btn" href="https://drboswell.gumroad.com">See the Core Kit ($69)</a>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Boswell Consulting Group</p>
+    <p class="fine">Free tools. No account needed. Nothing you enter leaves your browser.</p>
+  </div>
+</footer>
+
+<script src="estimator.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("startup-form");
+  var errBox = document.getElementById("form-errors");
+  var results = document.getElementById("results");
+
+  // Populate the state dropdown from the shared list.
+  var stateSelect = document.getElementById("state");
+  US_STATES.forEach(function (s) {
+    var opt = document.createElement("option");
+    opt.value = s;
+    opt.textContent = s;
+    stateSelect.appendChild(opt);
+  });
+
+  function checkedValue(name) {
+    var els = document.getElementsByName(name);
+    for (var i = 0; i < els.length; i++) {
+      if (els[i].checked) return els[i].value;
+    }
+    return null;
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    errBox.innerHTML = "";
+
+    var values = {
+      state: stateSelect.value,
+      model: checkedValue("model"),
+      location: checkedValue("location"),
+      staffCount: document.getElementById("staffCount").value
+    };
+
+    var errors = validateInputs(values);
+    if (errors.length > 0) {
+      errBox.innerHTML = errors.map(function (m) {
+        return "<p>" + m + "</p>";
+      }).join("");
+      results.style.display = "none";
+      return;
+    }
+
+    var inputs = {
+      state: values.state,
+      model: values.model,
+      location: values.location,
+      staffCount: Number(values.staffCount)
+    };
+    var r = calculateEstimate(inputs);
+
+    document.getElementById("state-note").textContent =
+      "Licensing requirements and fees vary by state. For the exact steps in " +
+      inputs.state + ", see the " + inputs.state + " startup pack on the Gumroad store.";
+
+    var itemsHtml = "";
+    r.lines.forEach(function (l) {
+      itemsHtml += '<div class="result-line"><span class="k">' + l.label +
+        '</span><span class="v">' + fmtRange(l.low, l.high) + "</span></div>";
+    });
+    document.getElementById("line-items").innerHTML = itemsHtml;
+
+    document.getElementById("out-total").textContent = fmtRange(r.totalLow, r.totalHigh);
+
+    var steps = "";
+    var lowParts = [];
+    var highParts = [];
+    r.lines.forEach(function (l) {
+      lowParts.push(fmtMoney(l.low));
+      highParts.push(fmtMoney(l.high));
+    });
+    steps += "Line items (low end):\n" + lowParts.join(" + ") + " = " + fmtMoney(r.totalLow) + "\n\n";
+    steps += "Line items (high end):\n" + highParts.join(" + ") + " = " + fmtMoney(r.totalHigh) + "\n\n";
+    steps += "Total startup cost range: " + fmtRange(r.totalLow, r.totalHigh) + "\n\n";
+    steps += "Working capital math (illustrative monthly burn):\n";
+    steps += "Low: $2,000 base + (" + inputs.staffCount + " staff x $2,500) = " +
+      fmtMoney(r.monthlyBurnLow) + " per month x 3 = " + fmtMoney(r.monthlyBurnLow * 3) + "\n";
+    steps += "High: $3,000 base + (" + inputs.staffCount + " staff x $4,000) = " +
+      fmtMoney(r.monthlyBurnHigh) + " per month x 3 = " + fmtMoney(r.monthlyBurnHigh * 3);
+    document.getElementById("formula-steps").textContent = steps;
+
+    results.style.display = "";
+    results.scrollIntoView();
+  });
+})();
+</script>
+
+</body>
+</html>
