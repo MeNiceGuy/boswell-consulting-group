@@ -1,0 +1,186 @@
+/* Boswell Consulting Group - shared site styles */
+:root {
+  --navy: #16324a;
+  --navy-dark: #0f2436;
+  --accent: #1e7a5c;
+  --accent-dark: #155c45;
+  --text: #23272e;
+  --muted: #5b6470;
+  --bg: #ffffff;
+  --bg-soft: #f3f5f7;
+  --border: #dde3e8;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.65;
+  font-size: 17px;
+}
+
+/* Header and nav */
+.site-header {
+  background: var(--navy);
+  color: #fff;
+  padding: 0.9rem 1.25rem;
+}
+.site-header .wrap {
+  max-width: 960px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.brand {
+  color: #fff;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+.brand small {
+  display: block;
+  font-weight: 400;
+  font-size: 0.8rem;
+  color: #c8d4de;
+}
+.site-nav a {
+  color: #dbe5ee;
+  text-decoration: none;
+  margin-left: 1.1rem;
+  font-size: 0.95rem;
+}
+.site-nav a:hover { color: #fff; text-decoration: underline; }
+
+/* Layout */
+.wrap { max-width: 960px; margin: 0 auto; padding: 0 1.25rem; }
+main.wrap { padding-top: 2rem; padding-bottom: 3rem; }
+
+.hero {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2.25rem 1.75rem;
+  margin-bottom: 2rem;
+}
+.hero h1 { margin-top: 0; font-size: 1.9rem; line-height: 1.3; }
+.hero p.lead { font-size: 1.12rem; color: var(--muted); }
+
+h1, h2, h3 { color: var(--navy); line-height: 1.35; }
+h2 { margin-top: 2.25rem; font-size: 1.45rem; }
+h3 { font-size: 1.15rem; }
+
+.card {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin: 1.25rem 0;
+}
+.card-soft { background: var(--bg-soft); }
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+}
+@media (max-width: 640px) {
+  .grid-2 { grid-template-columns: 1fr; }
+  .hero h1 { font-size: 1.55rem; }
+}
+
+/* Buttons and links */
+.btn {
+  display: inline-block;
+  background: var(--accent);
+  color: #fff;
+  text-decoration: none;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1.4rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn:hover { background: var(--accent-dark); color: #fff; }
+.btn-secondary {
+  background: #fff;
+  color: var(--navy);
+  border: 2px solid var(--navy);
+}
+.btn-secondary:hover { background: var(--navy); color: #fff; }
+a { color: var(--accent-dark); }
+
+/* Forms */
+.field { margin-bottom: 1.1rem; }
+.field label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
+.field .hint { font-size: 0.88rem; color: var(--muted); margin-top: 0.25rem; }
+input[type="text"], input[type="email"], input[type="number"], select {
+  width: 100%;
+  max-width: 420px;
+  padding: 0.65rem 0.75rem;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+input:focus, select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: var(--accent);
+}
+
+/* Results */
+.result-box {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+.result-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px solid var(--border);
+}
+.result-line:last-child { border-bottom: none; }
+.result-line .k { color: var(--muted); }
+.result-line .v { font-weight: 700; text-align: right; }
+.big-number { font-size: 2.4rem; font-weight: 800; color: var(--navy); }
+
+.formula {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92rem;
+  background: #fff;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 0.9rem 1rem;
+  margin: 0.75rem 0;
+  overflow-x: auto;
+}
+
+.disclaimer {
+  font-size: 0.88rem;
+  color: var(--muted);
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+  padding-top: 1rem;
+}
+
+/* Footer */
+.site-footer {
+  background: var(--navy-dark);
+  color: #c8d4de;
+  padding: 2rem 1.25rem;
+  font-size: 0.9rem;
+}
+.site-footer .wrap { max-width: 960px; margin: 0 auto; }
+.site-footer a { color: #e6edf4; }
+.site-footer .fine { margin-top: 1rem; font-size: 0.82rem; color: #93a3b5; }
