@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Compliance Readiness Checker - Boswell Consulting Group</title>
+  <meta name="description" content="Free 12-question self-check that scores your home care agency's compliance readiness and names your gaps.">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">Boswell Consulting Group<small>Practical tools for home care operators</small></a>
+    <nav class="site-nav">
+      <a href="https://drboswell.gumroad.com">Toolkits</a>
+      <a href="../../index.html">Free tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Compliance Readiness Checker</h1>
+    <p class="lead">Answer 12 plain yes or no questions. The checker scores your readiness, lists your exact gaps, and shows the scoring so you can see how the number was reached.</p>
+  </div>
+
+  <div class="card">
+    <p class="disclaimer" style="margin-top: 0;"><strong>Important:</strong> This is a working self-check based on professional judgment, not legal or compliance advice. It does not replace legal counsel. For legal questions about your agency, consult a licensed attorney.</p>
+    <form id="compliance-form" novalidate>
+      <div id="questions"></div>
+
+      <div id="form-errors" aria-live="polite" style="color: #a33; margin-bottom: 1rem;"></div>
+
+      <button type="submit" class="btn">Check my readiness</button>
+    </form>
+  </div>
+
+  <div id="results" class="result-box" style="display: none;" aria-live="polite">
+    <h2>Your readiness score</h2>
+
+    <div class="result-line">
+      <span class="k">Readiness score</span>
+      <span class="v big-number" id="out-score"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Reading</span>
+      <span class="v" id="out-band"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Questions answered yes</span>
+      <span class="v" id="out-yescount"></span>
+    </div>
+
+    <h3>Your gaps</h3>
+    <div id="gaps-list"></div>
+
+    <h3>How the score works</h3>
+    <div class="formula" id="formula-steps"></div>
+
+    <p class="disclaimer">This is a working self-check based on professional judgment, not legal or compliance advice. For legal questions about your agency, consult a licensed attorney.</p>
+
+    <p style="margin-top: 1.5rem;">
+      <a class="btn" href="https://drboswell.gumroad.com">See the Policies &amp; Procedures Pack</a>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Boswell Consulting Group</p>
+    <p class="fine">Free tools. No account needed. Nothing you enter leaves your browser.</p>
+  </div>
+</footer>
+
+<script src="checker.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("compliance-form");
+  var errBox = document.getElementById("form-errors");
+  var results = document.getElementById("results");
+  var qWrap = document.getElementById("questions");
+
+  // Render the 12 yes/no questions.
+  QUESTIONS.forEach(function (q) {
+    var field = document.createElement("div");
+    field.className = "field";
+    field.innerHTML =
+      "<fieldset style=\"border: 0; padding: 0; margin: 0;\">" +
+        "<legend style=\"font-weight: 600; margin-bottom: 0.25rem;\">" + q.title + "</legend>" +
+        "<div class=\"hint\" style=\"margin-bottom: 0.5rem;\">" + q.yesLooksLike + "</div>" +
+        "<label style=\"margin-right: 1.5rem; font-weight: 400;\"><input type=\"radio\" name=\"" + q.id + "\" value=\"yes\"> Yes</label>" +
+        "<label style=\"font-weight: 400;\"><input type=\"radio\" name=\"" + q.id + "\" value=\"no\"> No</label>" +
+      "</fieldset>";
+    qWrap.appendChild(field);
+  });
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    errBox.innerHTML = "";
+
+    var answers = {};
+    QUESTIONS.forEach(function (q) {
+      var picked = form.querySelector("input[name=\"" + q.id + "\"]:checked");
+      answers[q.id] = picked ? picked.value : null;
+    });
+
+    var errors = validateAnswers(answers);
+    if (errors.length > 0) {
+      errBox.innerHTML = errors.map(function (m) {
+        return "<p>" + m + "</p>";
+      }).join("");
+      results.style.display = "none";
+      return;
+    }
+
+    var r = scoreAnswers(answers);
+
+    document.getElementById("out-score").textContent = r.score + "%";
+    document.getElementById("out-band").textContent = bandLabel(r.score);
+    document.getElementById("out-yescount").textContent = r.yesCount + " of " + r.total;
+
+    var gapsHtml;
+    if (r.gaps.length === 0) {
+      gapsHtml = "<p>You answered yes to all 12 questions. Keep your records current and review them on a schedule.</p>";
+    } else {
+      gapsHtml = r.gaps.map(function (q) {
+        return "<div class=\"result-line\">" +
+          "<span class=\"k\">" + q.title + "</span>" +
+          "<span class=\"v\" style=\"font-weight: 400; max-width: 60%;\">" + q.whyItMatters + "</span>" +
+        "</div>";
+      }).join("");
+    }
+    document.getElementById("gaps-list").innerHTML = gapsHtml;
+
+    var steps = "";
+    steps += "Readiness score = yes answers / 12 questions x 100\n";
+    steps += "Your score: " + r.yesCount + " yes / 12 = " + r.score + "%\n";
+    steps += "Every question counts the same. The gaps list above shows every question you answered no to, in order.\n";
+    steps += "The reading label (" + bandLabel(r.score) + ") is professional judgment: 90 to 100 strong foundation, 70 to 89 mostly there, 40 to 69 work to do, below 40 start with the basics.";
+    document.getElementById("formula-steps").textContent = steps;
+
+    results.style.display = "";
+    results.scrollIntoView();
+  });
+})();
+</script>
+
+</body>
+</html>
