@@ -1,7 +1,8 @@
 // Client Acquisition Cost Calculator
 // Pure calculation and validation logic. No storage, no tracking.
 
-// Benchmark: published industry research reports an average client acquisition
+// Benchmark: published industry research (Activated Insights data reported by
+// Home Health Care News, July 2025) reports an average client acquisition
 // cost of $845 per client in 2024. Labeled explicitly in the UI as published
 // industry research, not a Boswell Consulting Group measurement.
 var INDUSTRY_BENCHMARK_2024 = 845;
@@ -112,7 +113,7 @@ function fmtMoney(n) {
 }
 
 function benchmarkLine(blended) {
-  var base = "Published industry research puts the average client acquisition cost at $" +
+  var base = "Published industry research (Activated Insights, via Home Health Care News, July 2025) puts the average client acquisition cost at $" +
     INDUSTRY_BENCHMARK_2024 + " per client in 2024. That figure comes from industry research, not from our measurement.";
   if (blended === null) {
     return base;
