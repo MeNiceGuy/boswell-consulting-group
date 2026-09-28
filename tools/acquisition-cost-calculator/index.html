@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Client Acquisition Cost Calculator - Boswell Consulting Group</title>
+  <meta name="description" content="Free calculator to work out what each new private-pay home care client really costs you, by channel.">
+  <link rel="stylesheet" href="../../styles.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="../../index.html">Boswell Consulting Group<small>Practical tools for home care operators</small></a>
+    <nav class="site-nav">
+      <a href="https://drboswell.gumroad.com">Toolkits</a>
+      <a href="../../index.html">Free tools</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <div class="hero">
+    <h1>Client Acquisition Cost Calculator</h1>
+    <p class="lead">Enter what you spent and how many new private-pay clients started, for each channel. The calculator works out what each client cost you, and shows every step so you can check the math.</p>
+  </div>
+
+  <div class="card">
+    <form id="cac-form" novalidate>
+      <h2>Channel 1: Referral outreach</h2>
+      <div class="field">
+        <label for="referralSpend">1. Monthly spend, in dollars</label>
+        <input type="number" id="referralSpend" name="referralSpend" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 500">
+        <div class="hint">Time, lunches, events, referral partner gifts. Everything you spent to drive referrals this month.</div>
+      </div>
+      <div class="field">
+        <label for="referralClients">2. New clients started this month</label>
+        <input type="number" id="referralClients" name="referralClients" min="0" step="1" inputmode="numeric" placeholder="e.g. 2">
+        <div class="hint">Clients who started service from referral outreach. Whole number, 0 or more.</div>
+      </div>
+
+      <h2>Channel 2: Online and reviews</h2>
+      <div class="field">
+        <label for="onlineSpend">3. Monthly spend, in dollars</label>
+        <input type="number" id="onlineSpend" name="onlineSpend" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 300">
+        <div class="hint">Website, listings, review tools, online profiles. Leave blank if you spent nothing here.</div>
+      </div>
+      <div class="field">
+        <label for="onlineClients">4. New clients started this month</label>
+        <input type="number" id="onlineClients" name="onlineClients" min="0" step="1" inputmode="numeric" placeholder="e.g. 1">
+        <div class="hint">Clients who found you online or through reviews and started service.</div>
+      </div>
+
+      <h2>Channel 3: Paid advertising</h2>
+      <div class="field">
+        <label for="paidSpend">5. Monthly spend, in dollars</label>
+        <input type="number" id="paidSpend" name="paidSpend" min="0" step="0.01" inputmode="decimal" placeholder="e.g. 1000">
+        <div class="hint">Ads on any platform. Leave blank if you run no ads.</div>
+      </div>
+      <div class="field">
+        <label for="paidClients">6. New clients started this month</label>
+        <input type="number" id="paidClients" name="paidClients" min="0" step="1" inputmode="numeric" placeholder="e.g. 0">
+        <div class="hint">Clients from paid ads who started service. Enter 0 if you spent but got no starts.</div>
+      </div>
+
+      <div id="form-errors" aria-live="polite" style="color: #a33; margin-bottom: 1rem;"></div>
+
+      <button type="submit" class="btn">Calculate my acquisition cost</button>
+    </form>
+  </div>
+
+  <div id="results" class="result-box" style="display: none;" aria-live="polite">
+    <h2>Your numbers</h2>
+
+    <div class="result-line">
+      <span class="k">Referral outreach cost per client</span>
+      <span class="v" id="out-referral"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Online and reviews cost per client</span>
+      <span class="v" id="out-online"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Paid advertising cost per client</span>
+      <span class="v" id="out-paid"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Blended cost per client</span>
+      <span class="v big-number" id="out-blended"></span>
+    </div>
+    <div class="result-line">
+      <span class="k">Industry comparison</span>
+      <span class="v" id="out-benchmark" style="font-weight: 400; max-width: 60%;"></span>
+    </div>
+
+    <h3>How the math works</h3>
+    <div class="formula" id="formula-steps"></div>
+
+    <p class="disclaimer">This calculator is a planning model based on professional judgment, not financial advice. It uses the numbers you enter and simple division; it does not account for client lifetime value, timing, or other costs.</p>
+
+    <p style="margin-top: 1.5rem;">
+      <a class="btn" href="https://drboswell.gumroad.com">See the Private-Pay Client Playbook ($39)</a>
+    </p>
+  </div>
+
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>Boswell Consulting Group</p>
+    <p class="fine">Free tools. No account needed. Nothing you enter leaves your browser.</p>
+  </div>
+</footer>
+
+<script src="calculator.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("cac-form");
+  var errBox = document.getElementById("form-errors");
+  var results = document.getElementById("results");
+
+  function val(id) {
+    return document.getElementById(id).value;
+  }
+
+  function line(left, right) {
+    return left + "\n" + right + "\n";
+  }
+
+  function toNum(v) {
+    return String(v).trim() === "" ? 0 : Number(v);
+  }
+
+  form.addEventListener("submit", function (e) {
+    e.preventDefault();
+    errBox.innerHTML = "";
+
+    var values = {
+      referralSpend: val("referralSpend"),
+      referralClients: val("referralClients"),
+      onlineSpend: val("onlineSpend"),
+      onlineClients: val("onlineClients"),
+      paidSpend: val("paidSpend"),
+      paidClients: val("paidClients")
+    };
+
+    var errors = validateInputs(values);
+    if (errors.length > 0) {
+      errBox.innerHTML = errors.map(function (m) {
+        return "<p>" + m + "</p>";
+      }).join("");
+      results.style.display = "none";
+      return;
+    }
+
+    var inputs = {
+      referralSpend: toNum(values.referralSpend),
+      referralClients: toNum(values.referralClients),
+      onlineSpend: toNum(values.onlineSpend),
+      onlineClients: toNum(values.onlineClients),
+      paidSpend: toNum(values.paidSpend),
+      paidClients: toNum(values.paidClients)
+    };
+    var r = calculateCAC(inputs);
+
+    function channelText(ch) {
+      if (!ch.hasStarts) {
+        return "no starts yet";
+      }
+      return fmtMoney(ch.cac);
+    }
+
+    document.getElementById("out-referral").textContent = channelText(r.perChannel[0]);
+    document.getElementById("out-online").textContent = channelText(r.perChannel[1]);
+    document.getElementById("out-paid").textContent = channelText(r.perChannel[2]);
+    document.getElementById("out-blended").textContent =
+      r.blended === null ? "no starts yet" : fmtMoney(r.blended);
+    document.getElementById("out-benchmark").textContent = benchmarkLine(r.blended);
+
+    var steps = "";
+    r.perChannel.forEach(function (ch) {
+      if (!ch.hasStarts) {
+        steps += line(
+          ch.name + " = " + fmtMoney(ch.spend) + " spent, 0 clients started: no cost per client to report",
+          ch.name + ": no starts yet"
+        );
+      } else {
+        steps += line(
+          ch.name + " CAC = " + fmtMoney(ch.spend) + " / " + ch.clients + " clients = " + fmtMoney(ch.cac),
+          ch.name + ": " + fmtMoney(ch.cac) + " per client"
+        );
+      }
+    });
+    if (r.totalClients > 0) {
+      steps += line(
+        "Blended CAC = " + fmtMoney(r.totalSpend) + " total spend / " + r.totalClients + " total clients = " + fmtMoney(r.blended),
+        "Blended: " + fmtMoney(r.blended) + " per client"
+      );
+    } else {
+      steps += line(
+        "Blended CAC = no clients started across any channel, so no blended cost to report",
+        "Blended: no starts yet"
+      );
+    }
+    document.getElementById("formula-steps").textContent = steps;
+
+    results.style.display = "";
+    results.scrollIntoView();
+  });
+})();
+</script>
+
+</body>
+</html>
